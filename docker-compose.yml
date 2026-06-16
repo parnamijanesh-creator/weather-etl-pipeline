@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # 1. The Database Service
+  db:
+    image: postgres:15
+    container_name: weather_postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: weather_db
+    ports:
+      - "5432:5432" # Maps the container port to your local machine so you can inspect it later
+    volumes:
+      - pgdata:/var/lib/postgresql/data # Ensures data isn't lost if the container stops
+
+  # 2. The Python ETL Service
+  etl_app:
+    build: .
+    container_name: weather_etl_script
+    depends_on:
+      - db # Tells Docker to start the database before running the Python script
+    env_file:
+      - .env
+    environment:
+      - DB_USER=admin
+      - DB_PASSWORD=password
+      - DB_HOST=db # Docker automatically resolves this to the 'db' container
+      - DB_PORT=5432
+      - DB_NAME=weather_db
+
+volumes:
+  pgdata:
