@@ -14,20 +14,26 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data # Ensures data isn't lost if the container stops
 
-  # 2. The Python ETL Service
-  etl_app:
-    build: .
-    container_name: weather_etl_script
+  # 2. The New Airflow Orchestrator
+  airflow:
+    image: apache/airflow:2.7.1-python3.9
+    container_name: weather_airflow
     depends_on:
-      - db # Tells Docker to start the database before running the Python script
+      - db
     env_file:
       - .env
     environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False # Don't load the distracting tutorial DAGs
       - DB_USER=admin
       - DB_PASSWORD=password
-      - DB_HOST=db # Docker automatically resolves this to the 'db' container
+      - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=weather_db
+    ports:
+      - "8080:8080" # This exposes the Airflow Web UI to your browser
+    volumes:
+      - ./dags:/opt/airflow/dags # Maps your local dags folder into the container
+    command: standalone # Boots up all Airflow components for local dev
 
 volumes:
   pgdata:
